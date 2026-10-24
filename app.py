@@ -144,9 +144,12 @@ CREATE INDEX IF NOT EXISTS idx_checkins_date ON checkins(date);
 
 def get_db():
     if "db" not in g:
-        g.db = sqlite3.connect(DB_PATH)
+        # timeout：多线程下等锁最多 10 秒，避免直接抛 database is locked
+        g.db = sqlite3.connect(DB_PATH, timeout=10)
         g.db.row_factory = sqlite3.Row
         g.db.execute("PRAGMA foreign_keys = ON")
+        # WAL 让读写不互相阻塞，waitress 多线程下更稳
+        g.db.execute("PRAGMA journal_mode = WAL")
     return g.db
 
 
