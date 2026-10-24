@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{{ code }} · 研究生管理系统{% endblock %}
+{% block content %}
+<div class="error-page">
+  <div class="error-code">{{ code }}</div>
+  <p>{{ msg }}</p>
+  <a class="btn btn-primary" href="{{ url_for('index') }}">回到首页</a>
+</div>
+{% endblock %}

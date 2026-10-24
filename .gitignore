@@ -1,0 +1,15 @@
+# 忽略清单
+demo.db
+*.db
+*.db-journal
+*.db-wal
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+shots/
+.env
+.idea/
+.vscode/
+.DS_Store

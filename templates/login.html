@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}登录 · 研究生管理系统{% endblock %}
+
+{% block content %}
+<div class="login-wrap">
+  <div class="login-card">
+    <div class="login-head">
+      <span class="logo logo-lg">研</span>
+      <h1>研究生管理系统</h1>
+      <p>任务 · 周报 · 打卡</p>
+    </div>
+
+    <form method="post" class="login-form">
+      <label>
+        <span>账号</span>
+        <input type="text" name="account" id="account" autocomplete="username" placeholder="t001 / s001" required>
+      </label>
+      <label>
+        <span>密码</span>
+        <input type="password" name="password" id="password" autocomplete="current-password" placeholder="123456" required>
+      </label>
+      <button type="submit" class="btn btn-primary btn-block">登 录</button>
+    </form>
+
+    <div class="demo-accounts">
+      <div class="demo-title">演示账号（点一下自动填入）</div>
+      <div class="account-chips">
+        <button type="button" class="chip" data-acc="t001">张老师 · t001</button>
+        <button type="button" class="chip" data-acc="s001">张三 · s001</button>
+        <button type="button" class="chip" data-acc="s002">李四 · s002</button>
+        <button type="button" class="chip" data-acc="s003">王五 · s003</button>
+      </div>
+      <div class="demo-hint">密码统一为 123456</div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.querySelectorAll('.chip').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.getElementById('account').value = b.dataset.acc;
+      document.getElementById('password').value = '123456';
+      document.getElementById('password').focus();
+    });
+  });
+</script>
+{% endblock %}

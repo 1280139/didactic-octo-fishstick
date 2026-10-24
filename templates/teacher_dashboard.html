@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}工作台 · 研究生管理系统{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>工作台</h1>
+    <p class="sub">{{ today_str | long_date }} · 本周 {{ current_week }}（{{ week_range_label(current_week) }}）</p>
+  </div>
+  <a class="btn btn-primary" href="{{ url_for('teacher_tasks') }}">＋ 派发任务</a>
+</div>
+
+<div class="stat-grid">
+  <section class="card stat-card">
+    <div class="stat-head">
+      <h2>本周未交周报</h2>
+      <span class="count {{ 'count-warn' if no_report else 'count-ok' }}">{{ no_report | length }}</span>
+    </div>
+    {% if no_report %}
+      <ul class="name-list">
+        {% for s in no_report %}
+          <li><a href="{{ url_for('teacher_student', sid=s.id) }}">
+            <span class="avatar avatar-sm">{{ s.name[0] }}</span>{{ s.name }}
+            <span class="arrow">›</span>
+          </a></li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="empty">本周全部已交 👍</p>
+    {% endif %}
+  </section>
+
+  <section class="card stat-card">
+    <div class="stat-head">
+      <h2>今日未打卡</h2>
+      <span class="count {{ 'count-warn' if no_checkin else 'count-ok' }}">{{ no_checkin | length }}</span>
+    </div>
+    {% if no_checkin %}
+      <ul class="name-list">
+        {% for s in no_checkin %}
+          <li><a href="{{ url_for('teacher_student', sid=s.id) }}">
+            <span class="avatar avatar-sm">{{ s.name[0] }}</span>{{ s.name }}
+            <span class="arrow">›</span>
+          </a></li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="empty">今天都打了卡 👍</p>
+    {% endif %}
+  </section>
+
+  <section class="card stat-card">
+    <div class="stat-head">
+      <h2>逾期任务</h2>
+      <span class="count {{ 'count-danger' if overdue else 'count-ok' }}">
+        {{ overdue | sum(attribute='cnt') if overdue else 0 }}
+      </span>
+    </div>
+    {% if overdue %}
+      <ul class="name-list">
+        {% for s in overdue %}
+          <li><a href="{{ url_for('teacher_student', sid=s.id) }}">
+            <span class="avatar avatar-sm">{{ s.name[0] }}</span>{{ s.name }}
+            <span class="meta">{{ s.cnt }} 条 · 最早 {{ s.earliest | short_date }}</span>
+            <span class="arrow">›</span>
+          </a></li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="empty">没有逾期任务 👍</p>
+    {% endif %}
+  </section>
+</div>
+
+<section class="card">
+  <div class="card-head">
+    <h2>学生概览</h2>
+    <span class="muted">点姓名进入聚合详情</span>
+  </div>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>学生</th>
+        <th class="num">未完成任务</th>
+        <th class="num">逾期</th>
+        <th class="num">本周打卡</th>
+        <th>本周周报</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in overview %}
+      <tr>
+        <td>
+          <a class="cell-name" href="{{ url_for('teacher_student', sid=s.id) }}">
+            <span class="avatar avatar-sm">{{ s.name[0] }}</span>{{ s.name }}
+          </a>
+        </td>
+        <td class="num">{{ s.open_tasks }}</td>
+        <td class="num">{% if s.overdue %}<span class="tag tag-danger">{{ s.overdue }}</span>{% else %}0{% endif %}</td>
+        <td class="num">{{ s.week_checkins }} 天</td>
+        <td>
+          {% if s.has_report %}
+            <span class="tag tag-ok">已交</span>
+          {% else %}
+            <span class="tag tag-warn">未交</span>
+          {% endif %}
+        </td>
+        <td class="num"><a class="link" href="{{ url_for('teacher_student', sid=s.id) }}">查看详情</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

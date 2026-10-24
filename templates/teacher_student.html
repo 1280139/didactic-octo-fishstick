@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %}{{ stu.name }} · 学生详情{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div class="head-with-avatar">
+    <span class="avatar avatar-lg">{{ stu.name[0] }}</span>
+    <div>
+      <h1>{{ stu.name }}</h1>
+      <p class="sub">账号 {{ stu.account }} · 本周 {{ current_week }}（{{ week_range_label(current_week) }}）</p>
+    </div>
+  </div>
+  <a class="btn btn-ghost" href="{{ url_for('teacher_dashboard') }}">← 返回工作台</a>
+</div>
+
+<div class="metric-row">
+  <div class="metric">
+    <div class="metric-num">{{ stats.open_tasks }}</div>
+    <div class="metric-label">未完成任务</div>
+  </div>
+  <div class="metric {{ 'metric-danger' if stats.overdue }}">
+    <div class="metric-num">{{ stats.overdue }}</div>
+    <div class="metric-label">逾期任务</div>
+  </div>
+  <div class="metric">
+    <div class="metric-num">{{ stats.week_checkins }}<small>天</small></div>
+    <div class="metric-label">本周打卡</div>
+  </div>
+  <div class="metric {{ 'metric-ok' if stats.has_report else 'metric-warn' }}">
+    <div class="metric-num metric-text">{{ '已交' if stats.has_report else '未交' }}</div>
+    <div class="metric-label">本周周报</div>
+  </div>
+</div>
+
+<section class="card">
+  <div class="card-head">
+    <h2>任务</h2>
+    <span class="muted">共 {{ tasks | length }} 条</span>
+  </div>
+  {% if tasks %}
+  <table class="table">
+    <thead>
+      <tr><th>任务</th><th>截止日期</th><th>状态</th><th class="num">进度</th></tr>
+    </thead>
+    <tbody>
+      {% for t in tasks %}
+      {% set is_overdue = t.status != 'done' and t.due_date < today_str %}
+      <tr class="{{ 'row-danger' if is_overdue else '' }}">
+        <td>
+          <div class="task-title">{{ t.title }}</div>
+          {% if t.detail %}<div class="task-detail">{{ t.detail }}</div>{% endif %}
+        </td>
+        <td class="nowrap">
+          {{ t.due_date | short_date }}
+          {% if is_overdue %}<span class="tag tag-danger">逾期</span>{% endif %}
+        </td>
+        <td>
+          {% if t.status == 'done' %}<span class="tag tag-ok">已完成</span>
+          {% elif t.status == 'doing' %}<span class="tag tag-info">进行中</span>
+          {% else %}<span class="tag tag-idle">待开始</span>{% endif %}
+        </td>
+        <td class="num">
+          <div class="progress"><div class="progress-bar {{ 'bar-ok' if t.status == 'done' }}" style="width: {{ t.progress }}%"></div></div>
+          <span class="progress-text">{{ t.progress }}%</span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">还没有派发任务</p>
+  {% endif %}
+</section>
+
+<div class="two-col">
+  <section class="card">
+    <div class="card-head">
+      <h2>近 14 天打卡</h2>
+      <span class="muted">{{ days | selectattr('checkin') | list | length }} / 14 天</span>
+    </div>
+    <div class="checkin-grid">
+      {% for d in days %}
+      <div class="checkin-cell {{ 'checked' if d.checkin else 'missing' }} {{ 'is-today' if d.date == today_date }}"
+           title="{{ d.date }} {{ d.date | weekday_cn }}{% if d.checkin %} · {{ d.checkin.content }}{% else %} · 未打卡{% endif %}">
+        <span class="cc-week">{{ d.date | weekday_cn }}</span>
+        <span class="cc-day">{{ d.date | short_date }}</span>
+        {% if d.checkin %}<span class="cc-dot"></span>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    <div class="legend">
+      <span><i class="lg lg-ok"></i>已打卡</span>
+      <span><i class="lg lg-miss"></i>未打卡</span>
+    </div>
+    <ul class="checkin-list">
+      {% for d in days | reverse %}
+        {% if d.checkin %}
+        <li>
+          <span class="ck-date">{{ d.checkin.date | short_date }}</span>
+          <span class="ck-content">{{ d.checkin.content }}</span>
+          <span class="ck-hours">{{ d.checkin.hours }}h</span>
+        </li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>近 4 周周报</h2>
+    </div>
+    <div class="week-list">
+      {% for w in weeks %}
+      <details class="week-item" {{ 'open' if w.current }}>
+        <summary>
+          <span class="wk-label">{{ w.label }}</span>
+          <span class="wk-range">{{ w.range }}</span>
+          {% if w.report %}
+            <span class="tag tag-ok">已交</span>
+            {% if w.report.rating %}<span class="rating">★ {{ w.report.rating }}</span>{% endif %}
+          {% else %}
+            <span class="tag tag-warn">未交</span>
+          {% endif %}
+        </summary>
+        {% if w.report %}
+        <div class="week-body">
+          <div class="field">
+            <div class="field-label">本周做了什么</div>
+            <div class="field-text">{{ w.report.this_week }}</div>
+          </div>
+          {% if w.report.next_week %}
+          <div class="field">
+            <div class="field-label">下周计划</div>
+            <div class="field-text">{{ w.report.next_week }}</div>
+          </div>
+          {% endif %}
+          {% if w.report.blockers %}
+          <div class="field">
+            <div class="field-label">遇到的问题</div>
+            <div class="field-text">{{ w.report.blockers }}</div>
+          </div>
+          {% endif %}
+
+          {% if w.report.comment %}
+          <div class="feedback-done">
+            <div class="field-label">我的评语</div>
+            <div class="field-text">{{ w.report.comment }}</div>
+          </div>
+          {% endif %}
+
+          <form method="post" action="{{ url_for('teacher_feedback', rid=w.report.id) }}" class="feedback-form">
+            <div class="field-label">写评语</div>
+            <textarea name="comment" rows="2" placeholder="给这条周报留一句反馈…">{{ w.report.comment or '' }}</textarea>
+            <div class="feedback-actions">
+              <select name="rating">
+                <option value="">不打分</option>
+                {% for r in [5, 4, 3, 2, 1] %}
+                  <option value="{{ r }}" {{ 'selected' if w.report.rating == r }}>{{ r }} 分</option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="btn btn-sm btn-primary">保存评语</button>
+            </div>
+          </form>
+        </div>
+        {% else %}
+        <div class="week-body">
+          <p class="empty">这周还没有提交周报</p>
+        </div>
+        {% endif %}
+      </details>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

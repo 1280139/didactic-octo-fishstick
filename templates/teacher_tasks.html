@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}任务管理 · 研究生管理系统{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>任务管理</h1>
+    <p class="sub">派发任务、查看每个学生的完成情况</p>
+  </div>
+</div>
+
+<section class="card">
+  <div class="card-head"><h2>派发新任务</h2></div>
+  <form method="post" class="form-row">
+    <label class="grow">
+      <span>任务标题</span>
+      <input type="text" name="title" placeholder="例如：精读一篇近三年文献并整理笔记" required>
+    </label>
+    <label>
+      <span>指派给</span>
+      <select name="student_id" required>
+        {% for s in students %}
+          <option value="{{ s.id }}">{{ s.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>
+      <span>截止日期</span>
+      <input type="date" name="due_date" value="{{ default_due }}" required>
+    </label>
+    <label class="grow2">
+      <span>说明（可选）</span>
+      <input type="text" name="detail" placeholder="交付物、验收标准…">
+    </label>
+    <button type="submit" class="btn btn-primary">派发</button>
+  </form>
+</section>
+
+{% for name, list in grouped.items() %}
+<section class="card">
+  <div class="card-head">
+    <h2>{{ name }}</h2>
+    <span class="muted">{{ list | length }} 条任务</span>
+  </div>
+  <table class="table">
+    <thead>
+      <tr><th>任务</th><th>截止日期</th><th>状态</th><th class="num">进度</th></tr>
+    </thead>
+    <tbody>
+      {% for t in list %}
+      {% set is_overdue = t.status != 'done' and t.due_date < today_str %}
+      <tr class="{{ 'row-danger' if is_overdue else '' }}">
+        <td>
+          <div class="task-title">{{ t.title }}</div>
+          {% if t.detail %}<div class="task-detail">{{ t.detail }}</div>{% endif %}
+        </td>
+        <td class="nowrap">
+          {{ t.due_date | short_date }}
+          {% if is_overdue %}<span class="tag tag-danger">逾期</span>{% endif %}
+        </td>
+        <td>
+          {% if t.status == 'done' %}<span class="tag tag-ok">已完成</span>
+          {% elif t.status == 'doing' %}<span class="tag tag-info">进行中</span>
+          {% else %}<span class="tag tag-idle">待开始</span>{% endif %}
+        </td>
+        <td class="num">
+          <div class="progress"><div class="progress-bar {{ 'bar-ok' if t.status == 'done' }}" style="width: {{ t.progress }}%"></div></div>
+          <span class="progress-text">{{ t.progress }}%</span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endfor %}
+
+{% if not grouped %}
+<section class="card"><p class="empty">还没有派发过任务</p></section>
+{% endif %}
+{% endblock %}

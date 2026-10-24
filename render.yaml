@@ -1,0 +1,15 @@
+# Render 一键部署配置（把仓库连到 Render，它会自动读这个文件）
+# 免费档没有持久磁盘，重启后数据会重置 —— 对 demo 来说正好。
+
+services:
+  - type: web
+    name: grad-manager-demo
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PYTHON_VERSION
+        value: 3.11.9

@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}我的任务 · 研究生管理系统{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>你好，{{ user.name }}</h1>
+    <p class="sub">{{ today_str | long_date }} · 本周 {{ current_week }}（{{ week_range_label(current_week) }}）</p>
+  </div>
+</div>
+
+<div class="two-col two-col-wide">
+  <section class="card">
+    <div class="card-head">
+      <h2>今日打卡</h2>
+      {% if today_checkin %}<span class="tag tag-ok">已打卡</span>{% else %}<span class="tag tag-warn">未打卡</span>{% endif %}
+    </div>
+
+    {% if today_checkin %}
+      <div class="checkin-done">
+        <div class="field-text">{{ today_checkin.content }}</div>
+        <div class="muted">投入 {{ today_checkin.hours }} 小时 · {{ today_checkin.created_at[11:16] }} 保存</div>
+      </div>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('student_checkin') }}" class="checkin-form">
+      <textarea name="content" rows="3" placeholder="今天做了什么？例如：跑通 baseline 第一组实验，记录显存占用。" required>{{ today_checkin.content if today_checkin else '' }}</textarea>
+      <div class="checkin-actions">
+        <label class="hours">
+          <span>投入小时</span>
+          <input type="number" name="hours" step="0.5" min="0" max="24"
+                 value="{{ today_checkin.hours if today_checkin else '' }}" placeholder="0">
+        </label>
+        <button type="submit" class="btn btn-primary">{{ '更新打卡' if today_checkin else '提交打卡' }}</button>
+      </div>
+    </form>
+
+    <div class="week-strip">
+      <span class="muted">本周已打卡 <strong>{{ week_checkins }}</strong> 天</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>本周周报</h2>
+      {% if report %}<span class="tag tag-ok">已交</span>{% else %}<span class="tag tag-warn">未交</span>{% endif %}
+    </div>
+    {% if report %}
+      <p class="muted">提交于 {{ report.submitted_at }}</p>
+      <div class="field">
+        <div class="field-label">本周做了什么</div>
+        <div class="field-text">{{ report.this_week }}</div>
+      </div>
+      {% if report.comment %}
+      <div class="feedback-done">
+        <div class="field-label">老师评语{% if report.rating %} · ★ {{ report.rating }}{% endif %}</div>
+        <div class="field-text">{{ report.comment }}</div>
+      </div>
+      {% endif %}
+      <a class="btn btn-ghost btn-block" href="{{ url_for('student_report') }}">修改本周周报</a>
+    {% else %}
+      <p class="empty">本周周报还没交，老师的工作台上会显示你的名字。</p>
+      <a class="btn btn-primary btn-block" href="{{ url_for('student_report') }}">去填写周报</a>
+    {% endif %}
+  </section>
+</div>
+
+<section class="card">
+  <div class="card-head">
+    <h2>我的任务</h2>
+    <span class="muted">{{ tasks | selectattr('status', 'ne', 'done') | list | length }} 条未完成</span>
+  </div>
+
+  <div class="task-list">
+    {% for t in tasks %}
+    {% set is_overdue = t.status != 'done' and t.due_date < today_str %}
+    <div class="task-item {{ 'task-done' if t.status == 'done' else '' }} {{ 'task-overdue' if is_overdue else '' }}">
+      <div class="task-main">
+        <div class="task-title-row">
+          <span class="task-title">{{ t.title }}</span>
+          {% if is_overdue %}<span class="tag tag-danger">逾期</span>{% endif %}
+        </div>
+        {% if t.detail %}<div class="task-detail">{{ t.detail }}</div>{% endif %}
+        <div class="task-meta">
+          <span>截止 {{ t.due_date | short_date }} {{ t.due_date | weekday_cn }}</span>
+          {% if t.status == 'done' %}<span class="tag tag-ok">已完成</span>
+          {% elif t.status == 'doing' %}<span class="tag tag-info">进行中</span>
+          {% else %}<span class="tag tag-idle">待开始</span>{% endif %}
+        </div>
+        <div class="progress-row">
+          <div class="progress"><div class="progress-bar {{ 'bar-ok' if t.status == 'done' }}" style="width: {{ t.progress }}%"></div></div>
+          <form method="post" action="{{ url_for('student_task_status', tid=t.id) }}" class="progress-form">
+            <input type="hidden" name="status" value="{{ 'doing' if t.status == 'todo' else t.status }}">
+            <select name="progress" onchange="this.form.submit()">
+              {% for p in [0, 25, 50, 75, 100] %}
+                <option value="{{ p }}" {{ 'selected' if t.progress == p }}>{{ p }}%</option>
+              {% endfor %}
+            </select>
+          </form>
+        </div>
+      </div>
+      <div class="task-actions">
+        {% if t.status == 'todo' %}
+        <form method="post" action="{{ url_for('student_task_status', tid=t.id) }}">
+          <input type="hidden" name="status" value="doing">
+          <button class="btn btn-sm btn-ghost" type="submit">开始</button>
+        </form>
+        {% endif %}
+        {% if t.status != 'done' %}
+        <form method="post" action="{{ url_for('student_task_status', tid=t.id) }}">
+          <input type="hidden" name="status" value="done">
+          <button class="btn btn-sm btn-primary" type="submit">完成</button>
+        </form>
+        {% else %}
+        <form method="post" action="{{ url_for('student_task_status', tid=t.id) }}">
+          <input type="hidden" name="status" value="todo">
+          <button class="btn btn-sm btn-ghost" type="submit">重开</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+{% if recent %}
+<section class="card">
+  <div class="card-head"><h2>最近打卡</h2></div>
+  <ul class="checkin-list">
+    {% for c in recent %}
+    <li>
+      <span class="ck-date">{{ c.date | short_date }}</span>
+      <span class="ck-content">{{ c.content }}</span>
+      <span class="ck-hours">{{ c.hours }}h</span>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endblock %}

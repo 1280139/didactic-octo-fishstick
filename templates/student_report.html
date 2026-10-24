@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}周报 · 研究生管理系统{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>本周周报</h1>
+    <p class="sub">{{ current_week }} · {{ week_range_label(current_week) }}
+      {% if report %}<span class="tag tag-ok">已提交</span>{% else %}<span class="tag tag-warn">未提交</span>{% endif %}
+    </p>
+  </div>
+  <a class="btn btn-ghost" href="{{ url_for('student_home') }}">← 返回</a>
+</div>
+
+<section class="card">
+  <form method="post" class="report-form">
+    <label>
+      <span class="field-label">本周做了什么 <em class="req">必填</em></span>
+      <textarea name="this_week" rows="6" placeholder="按任务逐条写：完成了什么、做到什么程度、有没有数据或结论。" required>{{ report.this_week if report else '' }}</textarea>
+    </label>
+    <label>
+      <span class="field-label">下周计划</span>
+      <textarea name="next_week" rows="4" placeholder="下周准备推进哪几件事，预计到什么程度。">{{ report.next_week if report else '' }}</textarea>
+    </label>
+    <label>
+      <span class="field-label">遇到的问题 / 需要的支持</span>
+      <textarea name="blockers" rows="3" placeholder="卡在哪里、需要老师提供什么帮助。没有可以留空。">{{ report.blockers if report else '' }}</textarea>
+    </label>
+    <div class="report-actions">
+      <span class="muted">{{ '重新提交会覆盖本周已有的周报' if report else '提交后老师可以在工作台看到' }}</span>
+      <button type="submit" class="btn btn-primary">{{ '更新周报' if report else '提交周报' }}</button>
+    </div>
+  </form>
+</section>
+
+{% if history %}
+<section class="card">
+  <div class="card-head"><h2>往期周报</h2></div>
+  <div class="week-list">
+    {% for h in history %}
+    <details class="week-item">
+      <summary>
+        <span class="wk-label">{{ week_label(h.week_key) }}</span>
+        <span class="wk-range">{{ week_range_label(h.week_key) }}</span>
+        <span class="tag tag-ok">已交</span>
+        {% if h.rating %}<span class="rating">★ {{ h.rating }}</span>{% endif %}
+      </summary>
+      <div class="week-body">
+        <div class="field">
+          <div class="field-label">本周做了什么</div>
+          <div class="field-text">{{ h.this_week }}</div>
+        </div>
+        {% if h.next_week %}
+        <div class="field">
+          <div class="field-label">下周计划</div>
+          <div class="field-text">{{ h.next_week }}</div>
+        </div>
+        {% endif %}
+        {% if h.comment %}
+        <div class="feedback-done">
+          <div class="field-label">老师评语</div>
+          <div class="field-text">{{ h.comment }}</div>
+        </div>
+        {% endif %}
+      </div>
+    </details>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}研究生管理系统{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% if user %}
+<header class="topbar">
+  <a class="brand" href="{{ url_for('index') }}">
+    <span class="logo">研</span>
+    <span class="brand-text">研究生管理系统<em>Demo</em></span>
+  </a>
+  <nav class="nav">
+    {% if user.role == 'teacher' %}
+      <a href="{{ url_for('teacher_dashboard') }}" class="{{ 'active' if active == 'dashboard' else '' }}">工作台</a>
+      <a href="{{ url_for('teacher_tasks') }}" class="{{ 'active' if active == 'tasks' else '' }}">任务管理</a>
+    {% else %}
+      <a href="{{ url_for('student_home') }}" class="{{ 'active' if active == 'home' else '' }}">我的任务</a>
+      <a href="{{ url_for('student_report') }}" class="{{ 'active' if active == 'report' else '' }}">周报</a>
+    {% endif %}
+  </nav>
+  <div class="userbox">
+    <span class="avatar">{{ user.name[0] }}</span>
+    <span class="uname">{{ user.name }}</span>
+    <span class="pill {{ 'pill-teacher' if user.role == 'teacher' else 'pill-student' }}">{{ '老师' if user.role == 'teacher' else '学生' }}</span>
+    <a class="logout" href="{{ url_for('logout') }}">退出</a>
+  </div>
+</header>
+{% endif %}
+
+<main class="container">
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% if msgs %}
+      <div class="flash-wrap">
+      {% for cat, m in msgs %}
+        <div class="flash flash-{{ cat }}">{{ m }}</div>
+      {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+
+{% if user %}
+<footer class="footer">
+  <span>研究生管理系统 · 最小可演示版本</span>
+  {% if user.role == 'teacher' %}
+  <form method="post" action="{{ url_for('teacher_reset') }}" class="reset-form"
+        onsubmit="return confirm('将清空所有数据并恢复初始演示数据，确定吗？')">
+    <button type="submit" class="linkbtn">重置演示数据</button>
+  </form>
+  {% endif %}
+</footer>
+{% endif %}
+{% block scripts %}{% endblock %}
+</body>
+</html>
