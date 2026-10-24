@@ -13,7 +13,11 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # 数据库路径：默认放在项目目录；部署到云平台时用 DATA_DIR 指向持久化磁盘
 # 例：DATA_DIR=/var/data  →  /var/data/demo.db
-DB_PATH = os.path.join(os.environ.get("DATA_DIR", BASE_DIR), "demo.db")
+DATA_DIR = os.environ.get("DATA_DIR", BASE_DIR)
+DB_PATH = os.path.join(DATA_DIR, "demo.db")
+
+# 目录不存在就先建出来，否则 sqlite3.connect 会直接抛 unable to open database file
+os.makedirs(DATA_DIR, exist_ok=True)
 
 app = Flask(__name__)
 # 部署到公网必须换成随机值，否则别人能伪造登录 cookie：
@@ -256,8 +260,9 @@ def seed(conn):
     )
 
 
-if not os.path.exists(DB_PATH):
-    init_db()
+# 建表 + 灌种子。init_db 本身幂等（CREATE TABLE IF NOT EXISTS + 只在空库时灌数据），
+# 所以无条件调用，避免"文件存在但表没建"这种半初始化状态。
+init_db()
 
 
 # ---------------------------------------------------------------- 认证
